@@ -16,6 +16,7 @@ func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("auth")
 	if err == http.ErrNoCookie {
 		//not authenticated
+		fmt.Print("Redirecting")
 		w.Header().Set("Location", "/login")
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
@@ -23,11 +24,13 @@ func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		//some other error
+		fmt.Printf("Internar error: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//success - call the next handler
+	fmt.Print("All good")
 	h.next.ServeHTTP(w, r)
 }
 
@@ -69,6 +72,7 @@ func loginHander(w http.ResponseWriter, r *http.Request) {
 		
 		credentials, err := provider.CompleteAuth(objx.MustFromURLQuery(r.URL.RawQuery))
 		if err != nil {
+			fmt.Printf("Error when trying to complete auth %s", err)
 			http.Error(w, fmt.Sprintf("Error when trying to complete auth for %s: %s", provider, err), http.StatusInternalServerError)
 			return
 		}

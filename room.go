@@ -41,6 +41,7 @@ func (r *room) run() {
 				r.tracer.Trace("New client joined")
 			case client := <-r.leave:
 				// leaving
+				log.Printf("This is action: %s", r.leave)
 				delete(r.clients, client)
 				close(client.send)
 				r.tracer.Trace("Client left")
