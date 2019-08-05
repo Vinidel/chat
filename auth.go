@@ -6,6 +6,8 @@ import (
 	"strings"
 	"fmt"
 	"github.com/stretchr/gomniauth"
+	"crypto/md5"
+	"io"
 )
 
 type authHandler struct {
@@ -13,8 +15,8 @@ type authHandler struct {
 }
 
 func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie("auth")
-	if err == http.ErrNoCookie {
+	cookie, err := r.Cookie("auth")
+	if err == http.ErrNoCookie || cookie.Value == "" {
 		//not authenticated
 		fmt.Print("Redirecting")
 		w.Header().Set("Location", "/login")
@@ -30,7 +32,7 @@ func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//success - call the next handler
-	fmt.Print("All good")
+	fmt.Println("All good")
 	h.next.ServeHTTP(w, r)
 }
 
@@ -82,8 +84,14 @@ func loginHander(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Error when trying to get user from %s: %s", provider, err), http.StatusInternalServerError)
 		}
 
+		m := md5.New()
+   	io.WriteString(m, strings.ToLower(user.Email()))
+   	userId := fmt.Sprintf("%x", m.Sum(nil))
 		authCookieValue := objx.New(map[string]interface{}{
-			"name": user.Name(),
+			"userid":      userId,
+			"name":       user.Name(),
+			"avatar_url": user.AvatarURL(),
+			"email":      user.Email(),
 		}).MustBase64()
 
 		http.SetCookie(w, &http.Cookie{

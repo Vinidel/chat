@@ -40,13 +40,14 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	addr := flag.String("addr", ":8080", "The addr of the  application.")
 	flag.Parse() // parse the flags
-	r := newRoom()
+	// r := newRoom(UseAuthAvatar)
+	r := newRoom(UseGravatarAvatar)
 
 // setup gomniauth
 gomniauth.SetSecurityKey("viniciusisawesome")
 gomniauth.WithProviders(
 	google.New("2313323659-h6478p0e0vvinuduoloduc091v0jc8tp.apps.googleusercontent.com", "pWdgRbEvUZRULULJogOxC1Qd",
-		"http://lvh.me/auth/callback/google"),
+		"http://vinichat.com/auth/callback/google"),
 )
 
 	r.tracer = trace.New(os.Stdout)
@@ -54,6 +55,16 @@ gomniauth.WithProviders(
 	http.Handle("/room", r)
 	http.Handle("/login", &templateHandler{filename: "login.html"})
 	http.HandleFunc("/auth/", loginHander)
+	http.HandleFunc("/logout", func(w http.ResponseWriter, r  *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:   "auth",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		w.Header().Set("Location", "/chat")
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}) 
 	// get the room going
 	go r.run()
 	// start the web server
